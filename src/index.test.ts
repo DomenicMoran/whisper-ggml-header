@@ -13,7 +13,7 @@ import {
  * gemessenen, funktionierenden Datei: whisper-base, F16, Vokabular 51865.
  */
 function header(
-  ueberschreiben: Partial<Record<string, number>> = {},
+  abweichend: Partial<Record<string, number>> = {},
 ): Uint8Array {
   const felder = {
     magic: GGML_MAGIC,
@@ -28,7 +28,7 @@ function header(
     nTextLayer: 6,
     nMels: 80,
     ftype: 1,
-    ...ueberschreiben,
+    ...abweichend,
   };
 
   const bytes = new Uint8Array(HEADER_BYTES);
