@@ -2,22 +2,56 @@
   "name": "whisper-ggml-header",
   "version": "1.0.0",
   "description": "Read and validate the header of a Whisper GGML model. Catches the n_text_ctx=1024 mis-conversion that makes whisper.cpp refuse to load a file. No dependencies.",
-  "keywords": ["whisper", "ggml", "whisper.cpp", "model", "validation", "n_text_ctx", "cli"],
+  "keywords": [
+    "whisper",
+    "ggml",
+    "whisper.cpp",
+    "model",
+    "validation",
+    "n_text_ctx",
+    "cli"
+  ],
   "license": "MIT",
   "author": "Domenic Moran",
-  "repository": { "type": "git", "url": "git+https://github.com/DomenicMoran/whisper-ggml-header.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DomenicMoran/whisper-ggml-header.git"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
-  "bin": { "whisper-ggml-header": "./dist/cli.js" },
-  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "whisper-ggml-header": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
   },
-  "devDependencies": { "@types/node": "^22.10.5", "typescript": "^5.7.3", "vitest": "^3.0.5" },
-  "engines": { "node": ">=20" }
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "homepage": "https://github.com/DomenicMoran/whisper-ggml-header#readme",
+  "bugs": {
+    "url": "https://github.com/DomenicMoran/whisper-ggml-header/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
