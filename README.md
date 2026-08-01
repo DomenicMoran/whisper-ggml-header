@@ -5,7 +5,8 @@ files that whisper.cpp silently refuses to load. Reads 48 bytes. No
 dependencies.
 
 ```bash
-npx whisper-ggml-header model.bin
+# Not on npm yet, so npx needs the repository:
+npx github:DomenicMoran/whisper-ggml-header model.bin
 ```
 
 ```
