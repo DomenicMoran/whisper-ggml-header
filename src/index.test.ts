@@ -9,13 +9,13 @@ import {
 } from "./index.js";
 
 /**
- * Baut einen Header aus zwölf Ganzzahlen. Die Vorgabewerte entsprechen einer
- * gemessenen, funktionierenden Datei: whisper-base, F16, Vokabular 51865.
+ * Builds a header from twelve integers. The defaults match a measured, working
+ * file: whisper-base, F16, vocabulary 51865.
  */
 function header(
-  abweichend: Partial<Record<string, number>> = {},
+  overrides: Partial<Record<string, number>> = {},
 ): Uint8Array {
-  const felder = {
+  const fields = {
     magic: GGML_MAGIC,
     nVocab: 51865,
     nAudioCtx: 1500,
@@ -28,17 +28,17 @@ function header(
     nTextLayer: 6,
     nMels: 80,
     ftype: 1,
-    ...abweichend,
+    ...overrides,
   };
 
   const bytes = new Uint8Array(HEADER_BYTES);
   const view = new DataView(bytes.buffer);
-  Object.values(felder).forEach((wert, i) => view.setUint32(i * 4, wert >>> 0, true));
+  Object.values(fields).forEach((value, i) => view.setUint32(i * 4, value >>> 0, true));
   return bytes;
 }
 
 describe("parseHeader", () => {
-  it("liest alle zwölf Felder", () => {
+  it("reads all twelve fields", () => {
     const h = parseHeader(header());
     expect(h.magic).toBe(GGML_MAGIC);
     expect(h.nVocab).toBe(51865);
@@ -47,34 +47,34 @@ describe("parseHeader", () => {
     expect(h.ftype).toBe(1);
   });
 
-  it("liest n_text_ctx bei Byte-Offset 24", () => {
+  it("reads n_text_ctx at byte offset 24", () => {
     const bytes = header({ nTextCtx: 448 });
-    const eigen = new DataView(bytes.buffer).getInt32(24, true);
-    expect(eigen).toBe(448);
+    const own = new DataView(bytes.buffer).getInt32(24, true);
+    expect(own).toBe(448);
   });
 
-  it("verlangt genug Bytes", () => {
+  it("insists on enough bytes", () => {
     expect(() => parseHeader(new Uint8Array(20))).toThrow(RangeError);
   });
 
-  it("kommt mit einem Ausschnitt eines größeren Puffers zurecht", () => {
-    // So liest man in der Praxis: die ersten 48 Bytes einer großen Datei.
-    const gross = new Uint8Array(4096);
-    gross.set(header(), 0);
-    expect(parseHeader(gross.subarray(0, HEADER_BYTES)).nTextCtx).toBe(448);
+  it("copes with a slice of a larger buffer", () => {
+    // This is how it is read in practice: the first 48 bytes of a large file.
+    const large = new Uint8Array(4096);
+    large.set(header(), 0);
+    expect(parseHeader(large.subarray(0, HEADER_BYTES)).nTextCtx).toBe(448);
   });
 });
 
 describe("describeFtype", () => {
-  it("erkennt unquantisierte Typen", () => {
+  it("recognises unquantised types", () => {
     expect(describeFtype(1)).toMatchObject({ quantisationVersion: 0, label: "f16" });
     expect(describeFtype(0).label).toBe("f32");
   });
 
-  it("zerlegt den quantisierten Wert in Version und Grundtyp", () => {
-    // An echten Dateien nachgemessen: eine mit q5_0 quantisierte
-    // base-Konvertierung meldet 2008, dieselbe mit q8_0 meldet 2007.
-    // In der ggml-Aufzaehlung ist 7 also q8_0 und 8 ist q5_0, nicht umgekehrt.
+  it("splits the quantised value into version and base type", () => {
+    // Measured against real files: a base conversion quantised to q5_0 reports
+    // 2008, the same one quantised to q8_0 reports 2007. So in the ggml enum
+    // 7 is q8_0 and 8 is q5_0, not the other way round.
     expect(describeFtype(2008)).toMatchObject({
       quantisationVersion: 2,
       baseType: 8,
@@ -83,46 +83,46 @@ describe("describeFtype", () => {
     expect(describeFtype(2007).label).toBe("q8_0 (qnt v2)");
   });
 
-  it("benennt Unbekanntes als solches", () => {
+  it("names the unknown as unknown", () => {
     expect(describeFtype(999).label).toContain("unknown");
   });
 });
 
 describe("checkHeader", () => {
-  it("meldet nichts bei einer gesunden Datei", () => {
+  it("reports nothing for a healthy file", () => {
     expect(checkHeader(parseHeader(header()))).toEqual([]);
   });
 
-  it("erkennt die verbreitete 1024er-Fehlkonvertierung und benennt die Ursache", () => {
+  it("catches the common 1024 mis-conversion and names the cause", () => {
     const f = checkHeader(parseHeader(header({ nTextCtx: 1024 })));
     expect(f).toHaveLength(1);
     expect(f[0].severity).toBe("blocking");
     expect(f[0].message).toContain("max_target_positions");
   });
 
-  it("meldet jeden anderen falschen Wert ebenfalls blockierend", () => {
+  it("reports any other wrong value as blocking too", () => {
     const f = checkHeader(parseHeader(header({ nTextCtx: 512 })));
     expect(f[0].severity).toBe("blocking");
     expect(f[0].message).toContain("512");
   });
 
-  it("erkennt eine Datei, die gar kein GGML ist, und hört dann auf", () => {
+  it("recognises a file that is not GGML at all and then stops", () => {
     const f = checkHeader(parseHeader(header({ magic: 0x46554747 })));
     expect(f).toHaveLength(1);
     expect(f[0].field).toBe("magic");
     expect(f[0].message).toContain("GGUF");
   });
 
-  it("akzeptiert 128 Mel-Bänder für large-v3", () => {
+  it("accepts 128 mel bands for large-v3", () => {
     expect(checkHeader(parseHeader(header({ nMels: 128, nVocab: 51866 })))).toEqual([]);
   });
 
-  it("beanstandet eine unbekannte Mel-Zahl blockierend", () => {
+  it("rejects an unknown mel count as blocking", () => {
     const f = checkHeader(parseHeader(header({ nMels: 64 })));
     expect(f.some((x: { field: string; severity: string }) => x.field === "nMels" && x.severity === "blocking")).toBe(true);
   });
 
-  it("warnt bei fremdem Vokabular, ohne zu blockieren", () => {
+  it("warns about a foreign vocabulary without blocking", () => {
     const f = checkHeader(parseHeader(header({ nVocab: 32000 })));
     expect(f).toHaveLength(1);
     expect(f[0].severity).toBe("warning");
@@ -130,18 +130,18 @@ describe("checkHeader", () => {
 });
 
 describe("inspect", () => {
-  it("nennt eine gesunde Datei ladbar", () => {
+  it("calls a healthy file loadable", () => {
     const r = inspect(header({ ftype: 2008 }));
     expect(r.loadable).toBe(true);
     expect(r.findings).toEqual([]);
     expect(r.header.nTextCtx).toBe(448);
   });
 
-  it("nennt die 1024er-Datei nicht ladbar", () => {
+  it("calls the 1024 file not loadable", () => {
     expect(inspect(header({ nTextCtx: 1024 })).loadable).toBe(false);
   });
 
-  it("bleibt ladbar, wenn nur eine Warnung vorliegt", () => {
+  it("stays loadable when there is only a warning", () => {
     expect(inspect(header({ nAudioCtx: 1000 })).loadable).toBe(true);
   });
 });

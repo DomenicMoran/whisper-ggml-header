@@ -4,6 +4,10 @@ Read and validate the header of a Whisper GGML model. Catches the mis-converted
 files that whisper.cpp silently refuses to load. Reads 48 bytes. No
 dependencies.
 
+[![CI](https://github.com/DomenicMoran/whisper-ggml-header/actions/workflows/ci.yml/badge.svg)](https://github.com/DomenicMoran/whisper-ggml-header/actions/workflows/ci.yml)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
+![Dependencies](https://img.shields.io/badge/dependencies-0-success)
+
 ```bash
 npx whisper-ggml-header model.bin
 ```
