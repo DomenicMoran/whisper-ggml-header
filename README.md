@@ -58,6 +58,10 @@ And check the result before you ship it, which is what this package is for.
 
 ## Library
 
+```bash
+npm install whisper-ggml-header
+```
+
 ```ts
 import { inspect, parseHeader, checkHeader } from "whisper-ggml-header";
 import { open } from "node:fs/promises";
